@@ -13,4 +13,8 @@
         $this->db->query("SELECT * FROM blogposts ORDER BY id");
         return $this->db->resultSet();
       }
+
+      public function newPost($data) {
+
+      }
     }
