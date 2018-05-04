@@ -1,0 +1,16 @@
+.container{
+    width: 50%;
+}
+
+.indexbox{
+    border: gray 1px solid;
+}
+
+.menu{
+    display:flex;
+    flex-direction: row;
+}
+
+.menulink{
+    margin-right:1em;
+}

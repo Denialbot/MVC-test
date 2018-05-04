@@ -14,7 +14,18 @@
         return $this->db->resultSet();
       }
 
-      public function newPost($data) {
+      public function getSinglePost($id){
+        $this->db->query("SELECT * FROM blogposts WHERE id = $id");
+        return $this->db->single();
+      }
 
+      public function newPost($data) {
+        $this->db->query("INSERT INTO blogposts (title, post, author_id) VALUES ('$data[postTitle]','$data[content]',1)");
+        return $this->db->execute();
+      }
+
+      public function deletePost($data){
+        $this->db->query("DELETE FROM blogposts WHERE id = $data[id]");
+        return $this->db->execute();
       }
     }

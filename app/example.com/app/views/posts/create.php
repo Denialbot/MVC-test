@@ -1,4 +1,7 @@
 <?php include(APPROOT."/views/includes/header.php"); ?>
+<?php if($_SESSION['logged in'] == false){
+    redirect("posts/index");
+}  ?>
 <h1> <?php echo $data['title'] ?> </h1>
     <form method="post" id="blogpost">
         <div class="form-group">
