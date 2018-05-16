@@ -16,6 +16,7 @@ class Posts extends Controller {
     }
 
     public function post($params) {
+        session_start();
         $post = $this->postModel->getSinglePost($params);
         $data = [
             "title" => "View Post",
@@ -27,9 +28,62 @@ class Posts extends Controller {
         $this->view("posts/post", $data);
     }
 
-    public function create(){
+    public function login(){
+        session_start();
+        if($_SESSION['logged in'] == true){
+            redirect("posts/index");
+        }
+        else if($_SERVER['REQUEST_METHOD'] == 'POST'){
+            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $data = [
+                'title' => 'Log In',
+                'nameerror' => '',
+                'passerror' => '',
+                'autherror' => '',
+                'username' => trim($_POST['username']),
+                'password' => trim($_POST['password'])
+            ];
 
-        if($_SERVER['REQUEST_METHOD'] == 'POST') {
+            if(empty($data['username'])){
+                $data['nameerror'] = 'Insert a username!';
+            }
+
+            if(empty($data['password'])){
+                $data['passerror'] = 'A password is required!';
+            }
+
+            if(empty($data['nameerror']) && empty($data['passerror'])){
+                $userdata = $this->postModel->PasswordCheckSingleUser($data['username']);
+                if($userdata->password == $data['password']){
+                    $_SESSION['logged in'] = true;
+                    $_SESSION['user_id'] = $userdata->id;
+                    redirect('posts/index');
+                }
+                else{
+                    $data['autherror'] = 'Username or Password is incorrect!';
+                    $this->view("posts/login", $data);
+                }
+            }
+            else{
+                $this->view("posts/login", $data);
+            }
+        }
+        else{
+            $data = [
+                'title' => 'Log In',
+                'nameerror' => '',
+                'passerror' => ''
+            ];
+            $this->view("posts/login", $data);
+        }
+    }
+
+    public function create(){
+        session_start();
+        if($_SESSION['logged in'] == false){
+            redirect("posts/index");
+        }
+        else if($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
             $data = [ 
             'title' => 'Create Post',
@@ -66,6 +120,10 @@ class Posts extends Controller {
     }
 
     public function dashboard(){
+        session_start();
+        if($_SESSION['logged in'] == false){
+            redirect("posts/index");
+        }
         $posts = $this->postModel->getPosts();
         $data=[
             "posts" => $posts,

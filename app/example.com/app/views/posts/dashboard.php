@@ -1,7 +1,4 @@
 <?php include(APPROOT."/views/includes/header.php"); ?>
-<?php if($_SESSION['logged in'] == false){
-    redirect("posts/index");
-}  ?>
     <h1><?php echo $data['title'] ?></h1>
     <?php foreach($data['posts'] as $post): ?>
         <div id="post-<?php echo $post->id ?>">

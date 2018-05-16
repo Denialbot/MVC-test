@@ -9,6 +9,11 @@
         $this->db = new Database();
       }
 
+      public function PasswordCheckSingleUser($username){
+        $this->db->query("SELECT * FROM users WHERE name = '$username' LIMIT 1");
+        return $this->db->single();
+      }
+
       public function getPosts() {
         $this->db->query("SELECT * FROM blogposts ORDER BY id");
         return $this->db->resultSet();
