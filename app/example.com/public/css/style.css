@@ -7,10 +7,19 @@
 }
 
 .menu{
+    background-color: aqua;
     display:flex;
     flex-direction: row;
+    height:100px;
+    justify-content: flex-start;
+    width:100%;
 }
 
 .menulink{
+    margin-left:1em;
     margin-right:1em;
+}
+
+.forceright{
+    margin-left: auto;
 }

@@ -9,6 +9,16 @@
         $this->db = new Database();
       }
 
+      public function CheckNameOverlap($username){
+        $this->db->query("SELECT COUNT(name) AS overlap FROM users WHERE name = '$username'");
+        return $this->db->single();
+      }
+
+      public function RegisterUser($data){
+        $this->db->query("INSERT INTO users (name, password) VALUES ('$data[newuser]','$data[passhash]')");
+        return $this->db->execute();
+      }
+
       public function PasswordCheckSingleUser($username){
         $this->db->query("SELECT * FROM users WHERE name = '$username' LIMIT 1");
         return $this->db->single();

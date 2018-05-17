@@ -28,6 +28,78 @@ class Posts extends Controller {
         $this->view("posts/post", $data);
     }
 
+    public function register(){
+        session_start();
+
+        if($_SESSION['logged in'] == true){
+            redirect("posts/index");
+        }
+        else if($_SERVER['REQUEST_METHOD'] == 'POST'){
+            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $data = [
+                'title' => 'Register',
+                'nameerror' => '',
+                'passerror' => '',
+                'adderror' => '',
+                'newuser' => $_POST['username'],
+                'newpass' => $_POST['password'],
+                'Cnewpass' => $_POST['Cpassword'],
+                'passhash' => ''
+            ];
+
+            if(empty($data['newuser'])){
+                $data['nameerror'] = 'No username has been entered';
+            }
+
+            if(empty($data['newpass'])){
+                $data['passerror'] = 'No password has been entered';
+            }
+
+            if($data['newpass'] != $data['Cnewpass']){
+                $data['passerror'] = 'The passwords do not match';
+            }
+
+            if(empty($data['passerror']) && empty($data['nameerror'])){
+                $useroverlap = $this->postModel->CheckNameOverlap($data['newuser']);
+                if($useroverlap->overlap > 0){
+                    $data['nameerror'] = 'The name already exists';
+                    $this->view("posts/register", $data);
+                }
+                else{
+                    $data['passhash'] = password_hash($data['newpass'],PASSWORD_DEFAULT);
+                    if($this->postModel->RegisterUser($data)){
+                        $newuserdata = $this->postModel->PasswordCheckSingleUser($data['newuser']);
+                        $_SESSION['logged in'] = true;
+                        $_SESSION['user_id'] = $newuserdata->id;
+                        redirect("posts/index");
+                    }
+                    else{
+                        $data['adderror'] = 'There was an error in registering the user';
+                        $this->view("posts/register", $data);
+                    }
+                }
+            }
+            else{
+                $this->view("posts/register", $data);
+            }
+        }
+        else{
+            $data = [
+                'title' => 'Register',
+                'nameerror' => '',
+                'passerror' => '',
+                'adderror' => ''
+            ];
+            $this->view("posts/register", $data);
+        }
+    }
+
+    public function logout(){
+        session_start();
+        session_destroy();
+        redirect("posts/index");
+    }
+
     public function login(){
         session_start();
         if($_SESSION['logged in'] == true){
@@ -54,7 +126,7 @@ class Posts extends Controller {
 
             if(empty($data['nameerror']) && empty($data['passerror'])){
                 $userdata = $this->postModel->PasswordCheckSingleUser($data['username']);
-                if($userdata->password == $data['password']){
+                if(password_verify($data['password'], $userdata->password)){
                     $_SESSION['logged in'] = true;
                     $_SESSION['user_id'] = $userdata->id;
                     redirect('posts/index');
