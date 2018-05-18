@@ -17,14 +17,55 @@ class Posts extends Controller {
 
     public function post($params) {
         session_start();
+
+        $commenterror = '';
+        if($_SERVER['REQUEST_METHOD'] == 'POST'){
+            $postername = $this->postModel->GetUserData($_SESSION['user_id']);
+            $commentdata = [
+                "targetpost" => $params,
+                "poster" => $postername->name,
+                "comment" => $_POST['newcomment'],
+            ];
+
+            if(empty($commentdata['comment'])){
+                $commenterror = 'No comment to post';
+            }
+
+            if($commentdata['comment'] > 255){
+                $commenterror = 'The comment is too long';
+            }
+
+            if(empty($commenterror)){
+                if($this->postModel->newComment($commentdata)){
+
+                } else{
+                    die("comment failed to post");
+                }
+            }
+
+        }
+
         $post = $this->postModel->getSinglePost($params);
+        $comments = $this->postModel->getComments($params);
+        if($post->hasimage == 1){
+            $image = $this->postModel->GetImageName($params);
+        }
         $data = [
             "title" => "View Post",
             "postid" => $post->id,
             "postTitle" => $post->title,
             "content" => $post->post,
-            "postauthor" => $post->author_id
+            "postauthor" => $post->author_id,
+            "hasimage" => $post->hasimage,
+            "comments" => $comments,
+            "commenterror" => $commenterror,
+            "loggedin" => $_SESSION['logged in'],
+            "imagename" => $image->filename,
+            "canedit" => false
         ];
+        if($_SESSION['logged in'] == $data['postauthor']){
+            $data['canedit'] = true;
+        }
         $this->view("posts/post", $data);
     }
 
@@ -161,9 +202,26 @@ class Posts extends Controller {
             'title' => 'Create Post',
             'titleerror' => '',
             'contenterror' => '',
+            'imageerror' => '',
             'postTitle' => trim($_POST['postTitle']),
-            'content' => trim($_POST['postContent'])
+            'content' => trim($_POST['postContent']),
+            'poster' => $_SESSION['user_id'],
+            'hasimage' => 0,
         ];
+        $imagename = '';
+        if(basename($_FILES['image']['name'])){
+            if(getimagesize($_FILES['image']['tmp_name'])){
+                if($_FILES['image']['size'] < 5000000){
+                    $imagename = time() . '-' .basename($_FILES['image']['name']);
+                    move_uploaded_file($_FILES['image']['tmp_name'],"uploads/$imagename");
+                    $data['hasimage'] = 1;
+                } else{
+                    $data['imageerror'] = 'Provided image is too large!';
+                }
+            } else{
+                $data['imageerror'] = 'The provided file is not an image!';
+            }
+        }
 
         if(empty($data['postTitle'])) {
             $data['titleerror'] = 'The post requires a title!';
@@ -175,8 +233,12 @@ class Posts extends Controller {
             $data['contenterror'] = 'The post requires content!';
         }
 
-        if(empty($data['titleerror']) && empty($data['contenterror'])) {
+        if(empty($data['titleerror']) && empty($data['contenterror'] && empty($data['imageerror']))) {
             if($this->postModel->newPost($data)) {
+                if($data['hasimage'] == 1){
+                    $newpostid = $this->postModel->GetNewPostid($data);
+                    $this->postModel->NewImage($imagename, $newpostid->id);
+                }
                 redirect("posts/index");
             }
         } else {
@@ -189,6 +251,47 @@ class Posts extends Controller {
         ];
         $this->view("posts/create", $data);
         }
+    }
+
+    public function edit($params){
+        session_start();
+        $postinfo = $this->postModel->getSinglePost($params);
+        $data = [
+            "postTitle" => '',
+            "postContent" => '',
+            "postid" => $postinfo->id,
+            "contenterror" => '',
+            "titleerror" => ''
+
+        ];
+        if($_SESSION['logged in'] == false){
+            redirect("posts/index");
+        }
+        else if($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $data['postTitle'] = trim($_POST["postTitle"]);
+            $data['postContent'] = trim($_POST["postContent"]);
+
+            if(empty($data['postTitle'])) {
+                $data['titleerror'] = 'The post requires a title!';
+            }
+
+            if(strlen($data['postTitle']) > 40) {
+                $data['titleerror'] = 'The title is too long!';
+            }
+
+            if(empty($data['postContent'])) {
+                $data['contenterror'] = 'The post requires content!';
+            }
+
+            if(empty($data['contenterror']) && empty($data['titlerror'])){
+                $this->postModel->UpdatePost($data);
+                redirect("post/$postinfo->id");
+            }
+        }
+        $data['postTitle'] = $postinfo->title;
+        $data['postContent'] = $postinfo->post;
+        $this->view("posts/edit", $data);
     }
 
     public function dashboard(){

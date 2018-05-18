@@ -7,12 +7,10 @@
 }
 
 .menu{
-    background-color: aqua;
+    border:1px solid gray;
     display:flex;
     flex-direction: row;
-    height:100px;
     justify-content: flex-start;
-    width:100%;
 }
 
 .menulink{

@@ -1,4 +1,4 @@
-<div class="menu"><?php  ?>
+<div class="menu">
     <?php session_start() ?>
     <a class="menulink" href="<?php echo URLROOT ?>/posts/index">Main</a>
     <?php
